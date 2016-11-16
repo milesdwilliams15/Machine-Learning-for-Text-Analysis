@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Machine Learning for Text Analysis by milesdwilliams15</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Machine Learning for Text Analysis</h1>
+        <h2>A Structural Topic Model of Primary and General Presidential Debate Transcripts from 2000 to 2016</h2>
+        <a href="https://github.com/milesdwilliams15/Machine-Learning-for-Text-Analysis" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <p>Here's what I'm doing to create a structural topic model (STM) of primary and general presidential debates:</p>
+
+<pre><code>## Structural Topic Model (STM) of Primary &amp; General Presidential Debates (2000-2016)
+# Debate Transcripts stored in: text &lt;- c(R1,...,P15)
+# Metadata stored in: metDat&lt;-data.frame(debateID,year)
+library(stm) # upload stm package from the library
+</code></pre>
+
+<p>First, I've created a vector of text objects (which I've called "text") where each object (R1,...,P15) contains the text for a primary or presidential debate transcript. I then created an object called "metDat," which is a matrix of metadata associated with each debate transcript (i.e., the election year of the debate and whether the debate was a Republican or Democratic primary debate, or a general election Presidential debate). Once I've made these, I then open the "stm" package in R.</p>
+
+<p>Before I can actually create a STM, I have to process the text data using the textProcessor() command in the stm package:</p>
+
+<pre><code># Process text data:
+debates&lt;-textProcessor(documents=text,
+                   metadata=metaDat,
+                   verbos=FALSE) 
+</code></pre>
+
+<p>The processed text is now in an object called "debates." </p>
+
+<p>Now I can go ahead and run a STM using the stm() command:</p>
+
+<pre><code># Estimate STM:
+stm1&lt;-stm(documents=debates$documents,
+          vocab=debates$vocab,
+          K=15,
+          prevalence=~debateID+s(year),
+          data=metDat)
+</code></pre>
+
+<p>Results can be visualized in a number of ways using the plot.STM() command:</p>
+
+<pre><code># Visualize results in "label" format:
+par(mfcol=c(1,3))
+plot.STM(stm1,type="labels",topics=1:5,width=50,text.cex=1.25)
+plot.STM(stm1,type="labels",topics=6:10,width=50,text.cex=1.25)
+plot.STM(stm1,type="labels",topics=11:15,width=50,text.cex=1.25)
+
+# Visualize results in "summary" format:
+par(mfcol=c(1,1))
+plot.STM(stm1,type="labels")
+</code></pre>
+
+<p>Beyond just doing some basic summary visualizations, I can also go further and visualize estimated effects. Doing so will allow me to show what topics are more likely to appear in Democratic vs. Republican vs. general debates, both in general and over time:</p>
+
+<pre><code># Estimate Model Effects:
+stm1effect&lt;-estimateEffect(formula=1:15~debateID+s(year),
+                           stmobj=stm1,
+                           metadata=metDat)        #smooth the effect of year
+
+# Visualize Estimated Effects:
+plot.estimateEffect(stm1effect,
+                    covariate="debateID",
+                    model=stm1,
+                    topics=stm1effect$topics[1:5]) #makes a pointestimate plot
+
+# Make overlapping continuous plots to show expected topic proportions over time per type of debate:
+plot.estimateEffect(stm1effect,                    #Topic proportions in Rep. debates
+                    covariate="year",
+                    model=stm1,
+                    topics=stm1effect$topics[10],
+                    method="continuous",
+                    xlab="Election Year",
+                    ylab="Expected Topic Proportions",
+                    moderator="debateID",
+                    moderator.value="Republican",
+                    ylim=c(-.1,.45),
+                    linecol="red",
+                    printlegend=F)
+plot.estimateEffect(stm1effect,                    #Topic proportions in Dem. debates
+                    covariate="year",
+                    model=stm1,
+                    topics=stm1effect$topics[10],
+                    method="continuous",
+                    xlab="Election Year",
+                    ylab="Expected Topic Proportions",
+                    moderator="debateID",
+                    moderator.value="Democrat",
+                    ylim=c(-.1,.45),
+                    linecol="blue",
+                    printlegend=F,add=T)
+plot.estimateEffect(stm1effect,                    #Topic proportions in Pres. debates
+                    covariate="year",
+                    model=stm1,
+                    topics=stm1effect$topics[10],
+                    method="continuous",
+                    xlab="Election Year",
+                    ylab="Expected Topic Proportions",
+                    moderator="debateID",
+                    moderator.value="Presidential",
+                    ylim=c(-.1,.45),
+                    linecol="green",
+                    printlegend=F,add=T)
+</code></pre>
+
+<p>Finally, I can show graphically topic correlations:</p>
+
+<pre><code>#Visualize Topic Correlations:
+plot(topicCorr(stm1))
+</code></pre>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/milesdwilliams15/Machine-Learning-for-Text-Analysis/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/milesdwilliams15/Machine-Learning-for-Text-Analysis/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/milesdwilliams15/Machine-Learning-for-Text-Analysis"></a> is maintained by <a href="https://github.com/milesdwilliams15">milesdwilliams15</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
